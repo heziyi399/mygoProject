@@ -23,7 +23,7 @@ type DetectorServiceModule struct {
 	redisClientForReport *redis.Client //用于上报
 }
 
-func main() {
+func build() {
 	// 连接到服务端建立的tcp连接
 	dsn := "root2:w3323656@tcp(127.0.0.1:3306)/tm_platform?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
