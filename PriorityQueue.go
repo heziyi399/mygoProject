@@ -1,4 +1,4 @@
-package main
+package mygoProject
 
 import (
 	"container/heap"
@@ -115,4 +115,46 @@ func (q *queue) push(x interface{}) {
 	item := x.(*Item)
 	item.index = n
 	*q = append(*q, item)
+}
+
+// 任务对象
+type task struct {
+	priority int64 //优先级
+	value    interface{}
+	key      string
+}
+type PriorityQueueTask struct {
+	mLock    sync.Mutex
+	pushChan chan *task
+	pq       *PriorityQueue
+}
+
+func NewPriorityQueueTask() *PriorityQueueTask {
+	//使用&，使用了结构体的指针来初始化 pq。这意味着 pq 是一个指向 PriorityQueueTask 类型的指针
+	//如果用pq := PriorityQueueTask{...} 直接使用值来初始化 pq。
+	//这种方式创建了 PriorityQueueTask 类型的一个实例，并且 pq 是这个实例的值拷贝
+	pq := &PriorityQueueTask{
+		pushChan: make(chan *task, 1000),
+		pq:       NewPriorityQueue(),
+	}
+	go pq.ListenPushChan()
+	return pq
+}
+func (pq *PriorityQueueTask) ListenPushChan() {
+	for {
+		select {
+		case task := <-pq.pushChan:
+			pq.mLock.Lock()
+			pq.pq.Push(&Item{Key: task.key, Value: task.value, Priority: task.priority})
+			pq.mLock.Unlock()
+		}
+	}
+}
+
+func (pq *PriorityQueueTask) Push(priority int64, value interface{}, key string) {
+	pq.pushChan <- &task{
+		key:      key,
+		value:    value,
+		priority: priority,
+	}
 }
