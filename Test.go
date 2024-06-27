@@ -1,4 +1,4 @@
-package mygoProject
+package main
 
 import (
 	"encoding/gob"
@@ -47,7 +47,12 @@ func ginTest() {
 
 var wg sync.WaitGroup
 
-func main() {
+type Person struct {
+	Name string
+	Age  int
+}
+
+func waitGroup() {
 
 	for i := 1; i <= 3; i++ {
 		wg.Add(1)
@@ -57,10 +62,7 @@ func main() {
 	fmt.Println("开始阻塞")
 	wg.Wait()
 	fmt.Println("任务执行结束,解除阻塞")
-	type Person struct {
-		Name string
-		Age  int
-	}
+
 	person := Person{"nick", 18}
 	file, _ := os.Create("person.gob")
 	defer file.Close()
@@ -75,4 +77,23 @@ func demo(index int) {
 		fmt.Printf("第%d次执行，i的值是：%d\n", index, i)
 	}
 	wg.Done()
+}
+
+func main() {
+	var ss string
+	if ss == "" {
+		fmt.Printf("ss is 空")
+	}
+	var personList []Person = make([]Person, 0)
+	personList = append(personList, Person{
+		Name: "xiaom",
+		Age:  18,
+	})
+	personList = append(personList, Person{
+		Name: "小红",
+		Age:  19,
+	})
+	for index, key := range personList {
+		fmt.Printf("myname:%s,index:%d", key.Name, index)
+	}
 }

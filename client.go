@@ -1,4 +1,4 @@
-package mygoProject
+package main
 
 import (
 	"fmt"

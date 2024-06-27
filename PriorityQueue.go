@@ -1,10 +1,12 @@
-package mygoProject
+package main
 
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 	"github.com/mitchellh/copystructure"
 	"sync"
+	"time"
 )
 
 type Item struct {
@@ -156,5 +158,31 @@ func (pq *PriorityQueueTask) Push(priority int64, value interface{}, key string)
 		key:      key,
 		value:    value,
 		priority: priority,
+	}
+}
+func (pq *PriorityQueueTask) Pop() *Item {
+	pq.mLock.Lock()
+	defer pq.mLock.Unlock()
+	item, err := pq.pq.Pop()
+	if err != nil {
+		return nil
+	}
+	// 如果所有队列都没有任务，则返回null
+	return item
+}
+
+// Consume 消费者轮询获取最高优先级的任务
+func (pq *PriorityQueueTask) Consume() {
+	for {
+		task := pq.Pop()
+		if task == nil {
+			// 未获取到任务，则继续轮询
+			time.Sleep(time.Millisecond)
+			continue
+		}
+		// 获取到了任务，就执行任务
+		fmt.Println("推送任务的编号为：", task.Value)
+		fmt.Println("推送的任务优先级为：", task.Priority)
+		fmt.Println("============")
 	}
 }

@@ -25,6 +25,7 @@ func (l LocalFilesystem) Write(bucketName string, objectName string, stream []by
 			return err
 		}
 	}
+	return nil
 }
 
 func (l LocalFilesystem) Copy(bucketName string, srcObjectName, objectName string) error {
@@ -118,6 +119,7 @@ func (l LocalFilesystem) WriteLocal(bucketName string, localFile string, objectN
 			return err
 		}
 	}
+	return nil
 
 }
 func (l LocalFilesystem) Path(bucketName string, objectName string) string {
