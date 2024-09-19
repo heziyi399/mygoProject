@@ -2,7 +2,11 @@ package main
 
 import (
 	"encoding/gob"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"os"
+	"time"
 )
 
 import (
@@ -79,21 +83,54 @@ func demo(index int) {
 	wg.Done()
 }
 
+var DB *gorm.DB
+
+func init() {
+	// 连接数据库
+	//配置MySQL连接参数
+	username := "root2"     //账号
+	password := "w3323656"  //密码
+	host := "127.0.0.1"     //数据库地址，可以是Ip或者域名
+	port := 3306            //数据库端口
+	Dbname := "tm_platform" //数据库名
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", username, password, host, port, Dbname)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+	if err != nil {
+		panic("连接数据库失败, error=" + err.Error())
+	}
+	DB = db
+}
+
+// 保存数据的函数
+
 func main() {
-	var ss string
-	if ss == "" {
-		fmt.Printf("ss is 空")
+
+	strategyForUpdate := StrategyForUpdate{ClusterId: "ree", StrategyId: 1231, Result: 1, Path: "/tesss", CreateTime: time.Now()}
+	//strategyForUpdate.id = 2
+	//strategyForUpdate.clusterId = "rwerwe"
+	//strategyForUpdate.strategyId = 1423232
+	//strategyForUpdate.result = 0
+	//strategyForUpdate.path = "/test"
+	fmt.Println(strategyForUpdate)
+	err := DB.Create(&strategyForUpdate).Error
+	if err != nil {
+		fmt.Println(err.Error())
+
 	}
-	var personList []Person = make([]Person, 0)
-	personList = append(personList, Person{
-		Name: "xiaom",
-		Age:  18,
-	})
-	personList = append(personList, Person{
-		Name: "小红",
-		Age:  19,
-	})
-	for index, key := range personList {
-		fmt.Printf("myname:%s,index:%d", key.Name, index)
-	}
+}
+
+type StrategyForUpdate struct {
+	Id           int64     `gorm:"column:id"`
+	StrategyId   int64     `gorm:"column:strategy_id"`
+	StrategyType string    `gorm:"column:strategy_type"`
+	ClusterId    string    `gorm:"column:cluster_id"`
+	Path         string    `gorm:"column:path"`
+	Result       int32     `gorm:"column:result"`
+	CreateTime   time.Time `json:"column:create_time"`
+}
+
+func (this *StrategyForUpdate) TableName() string {
+	return "strategy_for_update"
 }
