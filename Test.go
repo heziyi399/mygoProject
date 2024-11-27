@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/gob"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -105,7 +108,7 @@ func init() {
 
 // 保存数据的函数
 
-func main() {
+func testdb() {
 
 	strategyForUpdate := StrategyForUpdate{ClusterId: "ree", StrategyId: 1231, Result: 1, Path: "/tesss", CreateTime: time.Now()}
 	//strategyForUpdate.id = 2
@@ -119,6 +122,123 @@ func main() {
 		fmt.Println(err.Error())
 
 	}
+}
+func mathChildPath(path string) ([]string, error) {
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
+	pattern := "^" + path + "[^/]+:(.*):(.*):(.*):(.*):(.*):(.*):(.*):(.*):(.*):(.*).*"
+	regExp, _ := regexp.Compile(pattern)
+	file, _ := os.Open("result.txt")
+	scanner := bufio.NewScanner(file)
+	paths := make([]string, 0, 0)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if regExp.MatchString(line) {
+			paths = append(paths, line)
+		}
+		if strings.Contains(line, "FILE") {
+			fmt.Println("FILElINE")
+		}
+	}
+	return paths, nil
+}
+
+func testChildPath() {
+	path, _ := mathChildPath("/user")
+	fmt.Println(path)
+}
+
+type FileInfo struct {
+	Path       string
+	Timestamp  string
+	AccessTime string
+	OtherParts []string
+}
+
+func main() {
+	file, err := os.Open("result.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	// 读取文件内容并解析
+	fileInfos := parseFile(file)
+
+	// 更新父路径的时间戳
+	updateParentTimestamps(fileInfos)
+	testChildPath()
+	//	paths := make([]string, 0, 0)
+	// 打印更新后的结果
+	//for _, info := range fileInfos {
+	//	paths = append(paths, strings.Join(append([]string{info.Path, info.Timestamp, info.AccessTime}, info.OtherParts...), ":"))
+	//	fmt.Println(strings.Join(append([]string{info.Path, info.Timestamp, info.AccessTime}, info.OtherParts...), ":"))
+	//}
+}
+
+func parseFile(file *os.File) []FileInfo {
+	var fileInfos []FileInfo
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, ":")
+		if len(parts) < 2 {
+			continue
+		}
+		fileInfos = append(fileInfos, FileInfo{
+			Path:       parts[0],
+			Timestamp:  parts[1],
+			AccessTime: parts[2],
+			OtherParts: parts[3:],
+		})
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+	}
+	return fileInfos
+}
+
+func updateParentTimestamps(fileInfos []FileInfo) {
+	pathMap := make(map[string]*FileInfo)
+	for i := range fileInfos {
+		pathMap[fileInfos[i].Path] = &fileInfos[i]
+	}
+
+	for _, info := range fileInfos {
+		parentPath := getParentPath(info.Path)
+		fmt.Printf("info:%v,parent%v", info.Path, parentPath)
+		fmt.Println()
+		if parentInfo, exists := pathMap[parentPath]; exists {
+			parentInfo.Timestamp = info.Timestamp
+		}
+	}
+}
+func getParentPaths(path string) []string {
+	var parentPaths []string
+	if path == "/" {
+		return parentPaths
+	}
+	parts := strings.Split(path, "/")
+	for i := len(parts) - 1; i > 0; i-- {
+		parentPath := strings.Join(parts[:i], "/")
+		if parentPath == "" {
+			parentPath = "/"
+		}
+		parentPaths = append(parentPaths, parentPath)
+	}
+	return parentPaths
+}
+func getParentPath(path string) string {
+	if path == "/" {
+		return ""
+	}
+	parts := strings.Split(path, "/")
+	if len(parts) <= 1 {
+		return "/"
+	}
+	return strings.Join(parts[:len(parts)-1], "/")
 }
 
 type StrategyForUpdate struct {

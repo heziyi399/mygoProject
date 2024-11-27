@@ -1,0 +1,5 @@
+/user/hzyyy2/资源组.png:3:17283333568519099:1728568519075:134217728:1:64194:-1:-1:0:1:FILE:rw-r--r--:ziyihe:supergroup
+/user/hzyyy2/hzt:3:1728568519099:1728568519075:134217728:1:64194:-1:-1:0:1:DIRECTORY:rw-r--r--:ziyihe:supergroup
+/user/hzyyy2/zy:3:1728568519099:1728568519075:134217728:1:64194:-1:-1:0:1:DIRECTORY:rw-r--r--:ziyihe:supergroup
+/user:3:1728568519029:1728568519025:134217728:1:64194:-1:-1:0:1:DIRECTORY:rw-r--r--:ziyihe:supergroup
+/user/hzyyy2:3:1728568519029:1728568519025:134217728:1:64194:-1:-1:0:1:DIRECTORY:rw-r--r--:ziyihe:supergroup
