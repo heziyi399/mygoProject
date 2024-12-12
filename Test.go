@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/gob"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -157,25 +159,81 @@ type FileInfo struct {
 }
 
 func main() {
-	file, err := os.Open("result.txt")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
+	currentTime := time.Now().Unix()
+	fmt.Println(currentTime)
+
+	// 计算一分钟前的时间戳
+	oneMinuteAgo := currentTime - 150
+
+	// 构建 date 命令来获取一分钟前的时间格式
+	//linux系统命令如下
+	//dateCmd := exec.Command("date", "--date=@"+fmt.Sprint(oneMinuteAgo), "+%Y-%m-%dT%H:%M")
+	dateCmd := exec.Command("date", "-r", fmt.Sprint(oneMinuteAgo), "+%Y-%m-%dT%H:%M")
+	var dateOut bytes.Buffer
+	dateCmd.Stdout = &dateOut
+	if err := dateCmd.Run(); err != nil {
+		fmt.Printf("Error executing date command: %v\n", err)
 		return
 	}
-	defer file.Close()
 
-	// 读取文件内容并解析
-	fileInfos := parseFile(file)
+	// 获取格式化的时间字符串
+	timeStr := strings.TrimSpace(dateOut.String())
+	fmt.Println(strings.TrimSpace(timeStr))
+	var stderr bytes.Buffer
+	var output bytes.Buffer
+	// 构建 grep 命令来过滤日志文件
+	logFile := "/Users/heziyi/Desktop/5313/tbds-es_index_search_slowlog.log"
+	grepCmd := exec.Command("sh", "-c", fmt.Sprintf("cat %s | grep %s | wc -l", logFile, timeStr))
+	grepCmd.Stdout = os.Stdout
+	grepCmd.Stderr = os.Stderr
+	grepCmd.Stderr = &stderr
+	grepCmd.Stdout = &output
+	// 将 os.Stderr 重定向到我们的缓冲区
 
-	// 更新父路径的时间戳
-	updateParentTimestamps(fileInfos)
-	testChildPath()
-	//	paths := make([]string, 0, 0)
-	// 打印更新后的结果
-	//for _, info := range fileInfos {
-	//	paths = append(paths, strings.Join(append([]string{info.Path, info.Timestamp, info.AccessTime}, info.OtherParts...), ":"))
-	//	fmt.Println(strings.Join(append([]string{info.Path, info.Timestamp, info.AccessTime}, info.OtherParts...), ":"))
+	fmt.Println("cmd:", grepCmd)
+	//执行 grep 命令并获取输出
+	var grepOut bytes.Buffer
+	grepCmd.Stdout = &grepOut
+
+	if err := grepCmd.Run(); err != nil {
+		fmt.Println("error:", stderr.String())
+		fmt.Println("output", output)
+		fmt.Printf("Error executing grep command: %v\n", err)
+		return
+	}
+
+	fmt.Println("output", grepOut.String())
+	//grepOut, err := grepCmd.StdoutPipe()
+	//if err != nil {
+	//	fmt.Printf("Error creating pipe for grep command: %v\n", err)
+	//	return
 	//}
+	//
+	//// 构建 wc 命令来统计行数
+	//wcCmd := exec.Command("wc", "-l")
+	//wcCmd.Stdin = grepOut
+	//
+	//// 执行 grep 命令
+	//if err := grepCmd.Start(); err != nil {
+	//	fmt.Printf("Error starting grep command: %v\n", err)
+	//	return
+	//}
+	//
+	//// 执行 wc 命令并获取输出
+	//var wcOut bytes.Buffer
+	//wcCmd.Stdout = &wcOut
+	//if err := wcCmd.Run(); err != nil {
+	//	fmt.Printf("Error executing wc command: %v\n", err)
+	//	return
+	//}
+	//
+	//// 等待 grep 命令完成
+	//if err := grepCmd.Wait(); err != nil {
+	//	fmt.Printf("Error waiting for grep command: %v\n", err)
+	//	return
+	//}
+	//// 输出结果
+	//fmt.Printf("Number of slow query log entries: %s\n", strings.TrimSpace(wcOut.String()))
 }
 
 func parseFile(file *os.File) []FileInfo {
